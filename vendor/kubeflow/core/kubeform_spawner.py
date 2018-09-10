@@ -107,16 +107,22 @@ repoName = os.environ.get('REPO_NAME')
 c.JupyterHub.spawner_class = KubeFormSpawner
 c.KubeSpawner.singleuser_image_spec = '{0}/{1}/tensorflow-notebook'.format(registry, repoName)
 
-c.KubeSpawner.cmd = 'start-singleuser.sh'
-c.KubeSpawner.args = ['--allow-root']
+#c.KubeSpawner.cmd = 'start-singleuser.sh'
+#c.KubeSpawner.cmd = ['bash', '-c', 'export NB_USER=root && export NB_UID=0 && start-singleuser.sh --ip="0.0.0.0" --port=8888 --allow-root']
+c.KubeSpawner.cmd = ['bash', '-c', 'jupyterhub-singleuser --ip="0.0.0.0" --port=8888 --allow-root']
+#c.KubeSpawner.args = ['--allow-root']
+#c.KubeSpawner.args = ['--allow-root']
 # gpu images are very large ~15GB. need a large timeout.
 c.KubeSpawner.start_timeout = 60 * 30
 # Increase timeout to 5 minutes to avoid HTTP 500 errors on JupyterHub
 c.KubeSpawner.http_timeout = 60 * 5
 
 # Volume setup
-c.KubeSpawner.singleuser_uid = 1000
-c.KubeSpawner.singleuser_fs_gid = 100
+#c.KubeSpawner.singleuser_uid = 1000
+c.KubeSpawner.uid = 0
+#c.KubeSpawner.singleuser_fs_gid = 100
+c.KubeSpawner.gid = 0
+c.KubeSpawner.fs_gid = 0
 c.KubeSpawner.singleuser_working_dir = '/home/jovyan'
 volumes = []
 volume_mounts = []
@@ -132,12 +138,14 @@ if pvc_mount and pvc_mount != 'null':
     # How much disk space do we want?
     c.KubeSpawner.user_storage_capacity = '10Gi'
     c.KubeSpawner.user_storage_access_modes = ['ReadWriteMany']
-    c.KubeSpawner.pvc_name_template = 'claim-{username}{servername}'
+    #c.KubeSpawner.pvc_name_template = 'claim-{username}{servername}'
+    c.KubeSpawner.pvc_name_template = 'nfs'
     volumes.append(
         {
             'name': 'volume-{username}{servername}',
             'persistentVolumeClaim': {
-                'claimName': 'claim-{username}{servername}'
+                #'claimName': 'claim-{username}{servername}'
+                'claimName': 'nfs'
             }
         }
     )
